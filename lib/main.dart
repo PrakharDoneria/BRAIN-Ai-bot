@@ -5,14 +5,14 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'credits.dart';
+import 'package:unity_ads_plugin/unity_ads_plugin.dart';
 
 class ChatPage extends StatefulWidget {
   @override
   _ChatPageState createState() => _ChatPageState();
 }
 
-class _ChatPageState extends State<ChatPage>
-    with TickerProviderStateMixin {
+class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
   TextEditingController _messageController = TextEditingController();
   TextEditingController _systemPromptController = TextEditingController();
   List<Map<String, dynamic>> _chatHistory = [];
@@ -24,6 +24,7 @@ class _ChatPageState extends State<ChatPage>
   void initState() {
     super.initState();
     _loadChatHistory();
+    _initializeUnityAds();
     _waveController = AnimationController(
       vsync: this,
       duration: Duration(seconds: 1),
@@ -35,6 +36,39 @@ class _ChatPageState extends State<ChatPage>
     _waveController.dispose();
     super.dispose();
   }
+
+  void _initializeUnityAds() async {
+  await UnityAds.init(
+    gameId: '5122862',
+    onComplete: () => print('Initialization Complete'),
+    onFailed: (error, message) =>
+        print('Initialization Failed: $error $message'),
+  );
+
+  UnityAds.load(
+    placementId: 'Interstitial_Android',
+    onComplete: (placementId) {
+      print('Load Complete $placementId');
+      Future.delayed(Duration(seconds: 5), () {
+        _showInterstitialAd();
+      });
+    },
+    onFailed: (placementId, error, message) =>
+        print('Load Failed $placementId: $error $message'),
+  );
+}
+
+void _showInterstitialAd() {
+  UnityAds.showVideoAd(
+    placementId: 'Interstitial_Android',
+    onStart: (placementId) => print('Video Ad $placementId started'),
+    onClick: (placementId) => print('Video Ad $placementId click'),
+    onSkipped: (placementId) => print('Video Ad $placementId skipped'),
+    onComplete: (placementId) => print('Video Ad $placementId completed'),
+    onFailed: (placementId, error, message) =>
+        print('Video Ad $placementId failed: $error $message'),
+  );
+}
 
   void _loadChatHistory() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
